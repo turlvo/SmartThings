@@ -17,7 +17,8 @@ Repository for all related to SmartThings.
   6. Check Device Handler from 'New' tab
   7. Check 'Publish' and Add
 
- ### SmartThings Device Handler
+
+### SmartThings Device Handler
  - OSRAM Lightify Plug
       - Device Join Mapping
       - On/Off state(fixed dupplicated reporting)
