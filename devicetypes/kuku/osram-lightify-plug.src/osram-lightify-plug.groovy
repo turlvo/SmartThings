@@ -91,12 +91,12 @@ def on() {
 }
 
 def refresh() {    
-    zigbee.onOffRefresh() + zigbee.electricMeasurementPowerRefresh()    
+    zigbee.onOffRefresh() //+ zigbee.electricMeasurementPowerRefresh()    
 }
 
 def configure() {
     log.debug "in configure()"
-    refresh() + zigbee.onOffConfig(0, 300) + powerConfig()
+    refresh() + zigbee.onOffConfig(0, 300) //+ powerConfig()
 }
 
 def parseDescriptionAsMap(description) {
