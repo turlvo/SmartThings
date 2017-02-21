@@ -23,7 +23,7 @@ metadata {
 
         fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0005, 0006, 0B04"
         fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0005, 0006, 0702"                
-        fingerprint profileId: "C05E", inClusters: "02, 08, 0000, 0003, 0004, 0005, 0006, 0B04, FC0F", outClusters: "0019",manufacturer: "OSRAM", model: "Plug 01", deviceJoinName: "OSRAM Lightify Plug"
+        fingerprint profileId: "C05E", inClusters: "0000, 0003, 0004, 0005, 0006, 0B04, FC0F", manufacturer: "OSRAM", model: "Plug 01", deviceJoinName: "OSRAM Lightify Plug"
     }
 
     tiles(scale: 2) {
