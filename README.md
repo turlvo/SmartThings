@@ -14,7 +14,7 @@ Repository for all related to SmartThings.
     Name: SmartThings
     Brnach: master
   5. Select 'Update from Repo' and 'SmartThings(master)'
-  6. Check Device Handler from 'New' tab.
+  6. Check Device Handler from 'New' tab
   7. Check 'Publish' and Add
 
  ### SmartThings Device Handler
