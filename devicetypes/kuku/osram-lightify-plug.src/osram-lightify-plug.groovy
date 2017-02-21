@@ -34,9 +34,9 @@ metadata {
                 attributeState "turningOn", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#79b821", nextState:"turningOff"
                 attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
             }
-            tileAttribute ("power", key: "SECONDARY_CONTROL") {
-                attributeState "power", label:'${currentValue} kW'
-            }
+//            tileAttribute ("power", key: "SECONDARY_CONTROL") {
+//                attributeState "power", label:'${currentValue} kW'
+//            }
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
@@ -90,33 +90,13 @@ def on() {
     zigbee.on()
 }
 
-def updated() {
-    log.debug "in updated()"
-    // updated() doesn't have it's return value processed as hub commands, so we have to send them explicitly
-    //def cmds = configureHealthCheck()
-    cmds.each{ sendHubCommand(new physicalgraph.device.HubAction(it)) }
+def refresh() {    
+    zigbee.onOffRefresh() + zigbee.electricMeasurementPowerRefresh()    
 }
-
-def ping() {
-    return zigbee.onOffRefresh()
-}
-
-
-def refresh() {
-    Integer reportIntervalMinutes = 5
-    zigbee.onOffRefresh() + zigbee.simpleMeteringPowerRefresh() + zigbee.electricMeasurementPowerRefresh() + zigbee.onOffConfig(0,reportIntervalMinutes * 60) + zigbee.simpleMeteringPowerConfig() + zigbee.electricMeasurementPowerConfig()
-}
-
 
 def configure() {
     log.debug "in configure()"
-    return configureHealthCheck()
-}
-
-def configureHealthCheck() {
-    Integer hcIntervalMinutes = 12
-    sendEvent(name: "checkInterval", value: hcIntervalMinutes * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-    return refresh()
+    refresh() + zigbee.onOffConfig(0, 300) + powerConfig()
 }
 
 def parseDescriptionAsMap(description) {
@@ -128,4 +108,12 @@ def parseDescriptionAsMap(description) {
 
 private getEndpointId() {
 	new BigInteger(device.endpointId, 16).toString()
+}
+
+def powerConfig() {
+	[
+		"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 0x0B04 {${device.zigbeeId}} {}", "delay 200",
+		"zcl global send-me-a-report 0x0B04 0x050B 0x29 1 600 {05 00}",				//The send-me-a-report is custom to the attribute type for CentraLite
+		"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 500"
+	]
 }
