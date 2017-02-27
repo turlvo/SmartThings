@@ -100,30 +100,19 @@ def on() {
     zigbee.on()
 }
 
-def updated() {
-    log.debug "in updated()"
-    // updated() doesn't have it's return value processed as hub commands, so we have to send them explicitly
-    //def cmds = configureHealthCheck()
-    cmds.each{ sendHubCommand(new physicalgraph.device.HubAction(it)) }
-}
-
-def ping() {
-    return zigbee.onOffRefresh()
-}
-
 def refresh() {
 	log.debug "refresh()"
-    return zigbee.onOffRefresh() + zigbee.readAttribute(0x0702, 0x0000)
+    zigbee.onOffRefresh() + zigbee.readAttribute(0x0702, 0x0000)
 }
 
 def configure() {
     log.debug "Configuring Reporting and Bindings."
-    return zigbee.onOffConfig(0, 300) + zigbee.configureReporting(0x0702, 0x0000, 0x25, 0, 600, 1)+zigbee.configureReporting(0x0702, 0x0200, 0x18, 0, 36000, 1)
+    zigbee.onOffConfig(0, 300) + zigbee.configureReporting(0x0702, 0x0000, 0x25, 0, 600, 1)+zigbee.configureReporting(0x0702, 0x0200, 0x18, 0, 36000, 1)
 }
 
 def identify() {
 	log.debug "identify()"    
-    return zigbee.command(0x0003, 0x00, "0a00")
+    zigbee.command(0x0003, 0x00, "0a00")
 }
 
 def parseDescriptionAsMap(description) {
