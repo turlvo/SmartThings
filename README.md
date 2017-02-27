@@ -3,6 +3,7 @@
 Repository for all related to SmartThings.
 - SmartThings Device Handler
   - OSRAM Lightify Plug
+  - DAWON PM-B430-ZB Smart Plug
   
 ## SmartThings Device Handler
 ### Installation
@@ -20,8 +21,13 @@ Repository for all related to SmartThings.
 
 ### Device Handler
  - OSRAM Lightify Plug
-      - Device Join Mapping
-      - On/Off state(fixed dupplicated reporting)
+      - Device Auto Join Mapping
+      - On/Off state reporting(fixed dupplicated reporting)
+ - DAWON PM-B430-ZB Smart Plug
+      - Deviec Auto Join Mapping
+      - On/Off state reporting
+      - Power summation reporting
+      - Identification command
   
   
   
