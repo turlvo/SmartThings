@@ -67,13 +67,13 @@ def parse(String description) {
     
     } else if (description?.startsWith("catchall:")) {
         def msg = zigbee.parse(description)
-    	log.debug msg     
-        log.warn "data: $msg.clusterId"
-    	if (msg.clusterId == 32801) { 
-			log.warn "data: $msg.data"
-            name = "power"
-            value = msg.data           
-        }
+//    	log.debug msg     
+//        log.warn "data: $msg.clusterId"
+//    	if (msg.clusterId == 32801) { 
+//			log.warn "data: $msg.data"
+//            name = "power"
+//            value = msg.data           
+//        }
     }
     
     def result = createEvent(name: name, value: value)
@@ -91,12 +91,13 @@ def on() {
 }
 
 def refresh() {    
-    zigbee.onOffRefresh() //+ zigbee.electricMeasurementPowerRefresh()    
+    zigbee.onOffRefresh() + powerRefresh()
 }
 
 def configure() {
     log.debug "in configure()"
-    refresh() + zigbee.onOffConfig(0, 300) //+ powerConfig()
+    String zigbeeId = swapEndianHex(device.hub.zigbeeId)
+    refresh() + zigbee.onOffConfig(0, 300) + powerConfig()
 }
 
 def parseDescriptionAsMap(description) {
@@ -111,9 +112,44 @@ private getEndpointId() {
 }
 
 def powerConfig() {
-	[
-		"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 0x0B04 {${device.zigbeeId}} {}", "delay 200",
-		"zcl global send-me-a-report 0x0B04 0x050B 0x29 1 600 {05 00}",				//The send-me-a-report is custom to the attribute type for CentraLite
-		"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 500"
+	String zigbeeId = swapEndianHex(device.hub.zigbeeId)
+	def configCmds = [  
+        //Switch Reporting
+        "zcl global send-me-a-report 6 0 0x10 0 3600 {01}", "delay 500",
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1000",
+        
+        //Power Reporting
+        "zcl global send-me-a-report 0x0B04 0x0502 0x29 10 3600 {01 00 00 00}", "delay 200",
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
+      
+        "zdo bind 0x${device.deviceNetworkId} ${endpointId} 1 6 {${device.zigbeeId}} {}", "delay 1000",
+		"zdo bind 0x${device.deviceNetworkId} ${endpointId} 1 0x0B04 {${device.zigbeeId}} {}", "delay 200",
+	]	
+}
+
+def powerRefresh() {
+    [	
+    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0B04 0x0000",
+    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0B04 0x0304",
+    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0B04 0x0802",    
+    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0B04 0x090B",
+    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0B04 0x0A0B",
 	]
+}
+private String swapEndianHex(String hex) {
+    reverseArray(hex.decodeHex()).encodeHex()
+}
+
+private byte[] reverseArray(byte[] array) {
+    int i = 0;
+    int j = array.length - 1;
+    byte tmp;
+    while (j > i) {
+        tmp = array[j];
+        array[j] = array[i];
+        array[i] = tmp;
+        j--;
+        i++;
+    }
+    return array
 }
