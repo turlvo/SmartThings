@@ -64,11 +64,12 @@ def parse(String description) {
 	def event = zigbee.getEvent(description)
     if (event) {
     	sendEvent(event)
-    } else {
-        if (description?.startsWith('catchall: 0104 0500')) {
+    } else {    	
+        if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
         	// CO detected data is endsWith below value
             // 6400, 9600, 1E00, FA00, C800, 9600, 5E01, 9001, 2C01
-            if (description?.endsWith("64B0")) {
+            if (description?.endsWith("64B0")
+            	|| description?.endsWith("0000")) {
             	log.info "smoke clear"                
                 sendEvent(name: "smoke", value: "clear")
             } else {
@@ -78,7 +79,7 @@ def parse(String description) {
                 	sendEvent(name: "smoke", value: "detected")
                 }
             }
-        } else if (description?.startsWith("read attr -")) {
+        } else if (description?.startsWith("read attr -")) {			// For Smoke Sensor
         	// Smoke detected data is '0001', clear data is other data '0b04', '0000'
             def descMap = parseDescriptionAsMap(description)  
             log.warn "clusterId : " + descMap.cluster
