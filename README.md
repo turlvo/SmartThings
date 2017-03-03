@@ -2,8 +2,8 @@
 
 Repository for all related to SmartThings.
 - SmartThings Device Handler
-  - OSRAM Lightify Plug
-  - DAWON PM-B430-ZB Smart Plug
+  - OSRAM Lightify Plug(Plug 01)
+  - DAWON Power Manager(PM-B430-ZB)
   - SKT Sense CO/Smoke Sensor(TWSZ_G101N-Fv1./TWSZ_G102N-Fv1.)
   - SKT Sense Motion Sensor(TWSZ_P001N-Fv1.)
   - SKT Sense Door Sensor(TWSZ_D001N-Fv1.)
@@ -23,10 +23,10 @@ Repository for all related to SmartThings.
 
 
 ### Device Handler
- - OSRAM Lightify Plug
+ - OSRAM Lightify Plug(Plug 01)
       - Device Auto Join Mapping
       - On/Off state reporting(fixed dupplicated reporting)
- - DAWON PM-B430-ZB Smart Plug
+ - DAWON Power Manager(PM-B430-ZB)
       - Deviec Auto Join Mapping
       - On/Off state reporting
       - Power summation reporting
