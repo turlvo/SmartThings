@@ -36,10 +36,12 @@ metadata {
     }
 
     tiles(scale: 2) {
-       standardTile("contact", "device.contact", width: 6, height: 4) {
-			state "open",   label: '${name}', icon: "st.contact.contact.open",   backgroundColor: "#ffa81e"
-			state "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor: "#79b821"
-		}
+    	multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
+			tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
+				attributeState "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor:"#ffa81e"
+				attributeState "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor:"#79b821"
+			}
+		} 
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
 			state "battery", label:'${currentValue}% battery'
