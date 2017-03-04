@@ -43,49 +43,42 @@ metadata {
 			}
 		} 
         
-        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "battery", label:'${currentValue}% battery'
 		}
         main "contact"
-        details(["contact"])
+        details(["contact", "battery"])
     }
 }
 
 // Parse incoming device messages to generate events
 def parse(String description) {
     log.debug "description is $description"
-
-    def event = zigbee.getEvent(description)
-    if (event) {
-        if (event.name=="switch") {
-        	log.info "value: " + event.value
-            def changedValue
-            if (event.value == "on") {
-            	changedValue = "open"
+	
+    def value = (description - "on/off: ") as Integer
+    log.debug "value: " + value
+    
+    if (value > 1) {
+    	sendEvent(name:"battery", value:value)	
+    } else {
+        def event = zigbee.getEvent(description)
+        if (event) {
+            if (event.name=="switch") {
+                log.info "value: " + event.value
+                def changedValue
+                if (event.value == "on") {
+                    changedValue = "open"
+                } else {
+                    changedValue = "closed"
+                }
+                sendEvent(name:"contact", value:changedValue)
             } else {
-            	changedValue = "closed"
+                sendEvent(event)
             }
-        	sendEvent(name:"contact", value:changedValue)
-        } else {
-            sendEvent(event)
-        }
-    }
-    else {
-        def cluster = zigbee.parse(description)
-
-        if (cluster && cluster.clusterId == 0x0006 && cluster.command == 0x07) {
-            if (cluster.data[0] == 0x00) {
-                log.debug "ON/OFF REPORTING CONFIG RESPONSE: " + cluster
-                sendEvent(name: "checkInterval", value: 60 * 12, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-            }
-            else {
-                log.warn "ON/OFF REPORTING CONFIG FAILED- error code:${cluster.data[0]}"
-            }
-        }
-        else {
+        } else {        
             log.warn "DID NOT PARSE MESSAGE for description : $description"
             log.debug "${cluster}"
-        }
+        }    
     }
 }
 
