@@ -71,78 +71,41 @@ metadata {
 	}
 }
 
-def parse(String description) {
-	log.debug "description: $description"
 
-	// getEvent will handle temperature and humidity
-	Map map = zigbee.getEvent(description)
-	if (!map) {
-		Map descMap = zigbee.parseDescriptionAsMap(description)
-		if (descMap.clusterInt == 0x0001 && descMap.commandInt != 0x07 && descMap?.value) {
-			map = getBatteryResult(Integer.parseInt(descMap.value, 16))
-		} else if (descMap?.clusterInt == zigbee.TEMPERATURE_MEASUREMENT_CLUSTER && descMap.commandInt == 0x07) {
-			if (descMap.data[0] == "00") {
-				log.debug "TEMP REPORTING CONFIG RESPONSE: $descMap"
-				sendEvent(name: "checkInterval", value: 60 * 12, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-			} else {
-				log.warn "TEMP REPORTING CONFIG FAILED- error code: ${descMap.data[0]}"
-			}
+// Parse incoming device messages to generate events
+def parse(String description) {
+	def name = parseName(description)
+	def value = parseValue(description)
+	def unit = name == "temperature" ? getTemperatureScale() : (name == "humidity" ? "%" : null)
+    if (name == "temperature" && value == "48") {
+    	log.debug "wrong temp: " + value
+    } else {
+		def result = createEvent(name: name, value: value, unit: unit)
+        log.debug "Parse returned ${result?.descriptionText}"
+        
+        return result
+    }
+	
+	
+}
+
+private String parseName(String description) {
+	if (description?.startsWith("temperature: ")) {
+		return "temperature"
+	} else if (description?.startsWith("humidity: ")) {
+		return "humidity"
+	}
+	null
+}
+
+private String parseValue(String description) {
+	if (description?.startsWith("temperature: ")) {
+		return zigbee.parseHATemperatureValue(description, "temperature: ", getTemperatureScale())
+	} else if (description?.startsWith("humidity: ")) {
+		def pct = (description - "humidity: " - "%").trim()
+		if (pct.isNumber()) {
+			return Math.round(new BigDecimal(pct)).toString()
 		}
 	}
-
-	log.debug "Parse returned $map"
-	return map ? createEvent(map) : [:]
-}
-
-private Map getBatteryResult(rawValue) {
-	log.debug 'Battery'
-	def linkText = getLinkText(device)
-
-  def result = [:]
-
-	def volts = rawValue / 10
-	if (!(rawValue == 0 || rawValue == 255)) {
-		def minVolts = 2.1
-		def maxVolts = 3.0
-		def pct = (volts - minVolts) / (maxVolts - minVolts)
-		def roundedPct = Math.round(pct * 100)
-		if (roundedPct <= 0)
-			roundedPct = 1
-		result.value = Math.min(100, roundedPct)
-		result.descriptionText = "${linkText} battery was ${result.value}%"
-		result.name = 'battery'
-
-	}
-
-	return result
-}
-
-/**
- * PING is used by Device-Watch in attempt to reach the Device
- * */
-def ping() {
-	return zigbee.readAttribute(0x0001, 0x0020) // Read the Battery Level
-}
-
-def refresh() {
-	log.debug "refresh temperature, humidity, and battery"
-	return zigbee.readAttribute(0xFC45, 0x0000, ["mfgCode": 0x104E]) +   // New firmware
-			zigbee.readAttribute(0xFC45, 0x0000, ["mfgCode": 0xC2DF]) +   // Original firmware
-			zigbee.readAttribute(zigbee.TEMPERATURE_MEASUREMENT_CLUSTER, 0x0000) +
-			zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) +
-			zigbee.configureReporting(0xFC45, 0x0000, DataType.INT16, 30, 3600, 100) +
-			zigbee.batteryConfig() +
-			zigbee.temperatureConfig(30, 300)
-}
-
-def configure() {
-	// Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
-	// enrolls with default periodic reporting until newer 5 min interval is confirmed
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-
-	log.debug "Configuring Reporting and Bindings."
-
-	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
-	// battery minReport 30 seconds, maxReportTime 6 hrs by default
-	return refresh()
+	null
 }
