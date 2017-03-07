@@ -22,9 +22,9 @@ metadata {
         
         command "test"
    		command "clear"
-        
-        fingerprint profileId: "0104", inClusters: "0000, 0500, 0003", outClusters: "0004, 0003, 0019", manufacturer: "LGI", model: "TWSZ_G101N-Fv1.", deviceJoinName: "T View Sense CO Sensor"
-        fingerprint profileId: "0104", inClusters: "0000, 0B03, 0003", outClusters: "0004, 0003, 0019", manufacturer: "LGI", model: "TWSZ_G102N-Fv1.", deviceJoinName: "T View Sense Smoke Sensor"
+                
+        fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0500, 0003", outClusters: "0004, 0003, 0019", manufacturer: "LGI", model: "TWSZ_G101N-Fv1.", deviceJoinName: "T View Sense CO Sensor"
+        fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0B03, 0003", outClusters: "0004, 0003, 0019", manufacturer: "LGI", model: "TWSZ_G102N-Fv1.", deviceJoinName: "T View Sense Smoke Sensor"
 	}
 
 

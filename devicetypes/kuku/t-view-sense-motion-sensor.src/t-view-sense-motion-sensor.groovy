@@ -21,7 +21,7 @@ metadata {
         capability "Motion Sensor"
         capability "illuminanceMeasurement"
         
-        fingerprint profileId: "0104", inClusters: "0000, 0003, 0400, 0406", manufacturer: "LGI", model: "TWSZ_P001N-Fv1.", deviceJoinName: "T View Sense Contact Sensor"
+        fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0003, 0400, 0406", manufacturer: "LGI", model: "TWSZ_P001N-Fv1.", deviceJoinName: "T View Sense Contact Sensor"
 	}
 
 
