@@ -35,7 +35,7 @@ metadata {
 
 // UI tile definitions
 	tiles {
-        multiAttributeTile(name:"smoke", type: "lighting", width: 6, height: 4){
+        multiAttributeTile(name:"smoke", type: "lighting", width: 6, height: 4, canChangeIcon: true){
             tileAttribute ("device.smoke", key: "PRIMARY_CONTROL") {
                 attributeState("clear", label:"CLEAR", icon:"st.alarm.smoke.clear", backgroundColor:"#ffffff")
                 attributeState("detected", label:"SMOKE", icon:"st.alarm.smoke.smoke", backgroundColor:"#e86d13")
