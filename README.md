@@ -40,8 +40,9 @@ Repository for all related to SmartThings.
  - SKT T View Sense Door Sensor(TWSZ_D001N-Fv1.)
       - Device Auto Join Mapping(Not yet why T.T)
       - Door contact reporting
-  
-  
+ - SKT T View Sense Temperature/Humidity Sensor(TWSZ_T001N-Fv1.)
+      - Device Auto Join Mapping
+      - Temperature and Humidity reporting
   
 
   
