@@ -45,7 +45,7 @@ Repository for all related to SmartThings.
       - Door contact reporting
  - SKT T View Sense Temperature/Humidity Sensor(TWSZ_T001N-Fv1.)
       - Device Auto Join Mapping
-      - Temperature and Humidity reporting
+      - Temperature and Humidity reporting
   
 
   
