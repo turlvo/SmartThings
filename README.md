@@ -35,13 +35,13 @@ Repository for all related to SmartThings.
       - Power summation reporting
       - Identification command
  - SKT T View Sense CO/Smoke Sensor(TWSZ_G101N-Fv1./TWSZ_G102N-Fv1.)
-      - Device Auto Join Mapping(Not yet why T.T)
+      - Device Auto Join Mapping
       - CO/Smoke Detect and Clear reporting
  - SKT T View Sense Motion Sensor(TWSZ_P001N-Fv1.)
-      - Device Auto Join Mapping(Not yet why T.T)
+      - Device Auto Join Mapping
       - Motion Detect reporting
  - SKT T View Sense Door Sensor(TWSZ_D001N-Fv1.)
-      - Device Auto Join Mapping(Not yet why T.T)
+      - Device Auto Join Mapping
       - Door contact reporting
  - SKT T View Sense Temperature/Humidity Sensor(TWSZ_T001N-Fv1.)
       - Device Auto Join Mapping
