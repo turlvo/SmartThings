@@ -74,6 +74,7 @@ metadata {
 
 // Parse incoming device messages to generate events
 def parse(String description) {
+	log.debug "parse: desc: $description"
 	def name = parseName(description)
 	def value = parseValue(description)
 	def unit = name == "temperature" ? getTemperatureScale() : (name == "humidity" ? "%" : null)
@@ -108,4 +109,58 @@ private String parseValue(String description) {
 		}
 	}
 	null
+}
+
+def refresh() {
+	log.debug "refresh temperature, humidity, and battery"
+	return zigbee.readAttribute(zigbee.TEMPERATURE_MEASUREMENT_CLUSTER, 0x0000) +
+			zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) +
+			zigbee.configureReporting(0xFC45, 0x0000, DataType.INT16, 30, 3600, 100) +
+			zigbee.batteryConfig() +
+			zigbee.temperatureConfig(30, 300)
+}
+
+def configure() {
+	// Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
+	// enrolls with default periodic reporting until newer 5 min interval is confirmed
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+
+	log.debug "Configuring Reporting and Bindings."
+
+	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
+	// battery minReport 30 seconds, maxReportTime 6 hrs by default
+	return refresh()
+}
+
+private Map getBatteryResult(rawValue) {
+	log.debug 'Battery'
+	def linkText = getLinkText(device)
+
+	log.debug rawValue
+
+	def result = [
+		name: 'battery',
+		value: '--'
+	]
+    result.descriptionText = "${linkText} battery was ${rawValue}%"
+
+	def volts = rawValue / 10
+    log.debug volts
+	def descriptionText
+
+	if (rawValue == 0) {}
+	else {
+		if (volts > 3.5) {
+			result.descriptionText = "${linkText} battery has too much power (${volts} volts)."
+		}
+		else if (volts > 0){
+			def minVolts = 2.1
+			def maxVolts = 3.0
+			def pct = (volts - minVolts) / (maxVolts - minVolts)
+			result.value = Math.min(100, (int) pct * 100)
+			result.descriptionText = "${linkText} battery was ${result.value}%"
+		}
+	}
+
+	return result
 }

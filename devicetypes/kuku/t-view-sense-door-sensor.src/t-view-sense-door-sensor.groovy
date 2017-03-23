@@ -21,7 +21,7 @@ metadata {
         capability "Switch Level"
         capability "Health Check"        
        
-        fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0003, 0006", outClusters: "0003, 0004, 0019", manufacturer: "LGI", model: "TWSZ_D001N-Fv1.", deviceJoinName: "T View Sense Door Sensor Device "
+        fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0003, 0006", manufacturer: "LGI", deviceJoinName: "T View Sense Door Sensor Device "
     }
 
     tiles(scale: 2) {
@@ -77,7 +77,15 @@ def configure() {
     // Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
     // enrolls with default periodic reporting until newer 5 min interval is confirmed
     sendEvent(name: "checkInterval", value: 2 * 10 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-
+	
     // OnOff minReportTime 0 seconds, maxReportTime 5 min. Reporting interval if no activity
-    refresh() + zigbee.onOffConfig(0, 300) + zigbee.levelConfig()
+    refresh() + configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01)
+}
+
+def refresh() {
+	log.debug "Refreshing Battery"
+    def endpointId = 0x01
+	[
+	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
+	] //+ enrollResponse()
 }
