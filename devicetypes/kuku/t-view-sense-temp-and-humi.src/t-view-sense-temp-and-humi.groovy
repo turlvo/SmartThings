@@ -42,19 +42,22 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		multiAttributeTile(name: "temperature", type: "generic", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
-				attributeState "temperature", label: '${currentValue}°',
+		multiAttributeTile(name: "temp&humidity", type: "generic", width: 6, height: 4, canChangeIcon: true) {
+			tileAttribute("temp&humidity", key: "PRIMARY_CONTROL") {
+				attributeState "temp&humidity", label: '${currentValue}',
 						backgroundColors: [
-								[value: 31, color: "#153591"],
-								[value: 44, color: "#1e9cbb"],
-								[value: 59, color: "#90d2a7"],
-								[value: 74, color: "#44b621"],
-								[value: 84, color: "#f1d801"],
-								[value: 95, color: "#d04e00"],
-								[value: 96, color: "#bc2323"]
+								[value: 18, color: "#153591"],
+								//[value: 20, color: "#1e9cbb"],
+								//[value: 22, color: "#90d2a7"],
+								[value: 21, color: "#44b621"],
+								[value: 24, color: "#f1d801"],
+								[value: 27, color: "#d04e00"],
+								[value: 30, color: "#bc2323"]
 						]
 			}
+		}
+		valueTile("temperature", "device.temperature", inactiveLabel: false, width: 2, height: 2) {
+			state "temperature", label: '${currentValue}°C temperature', unit: ""
 		}
 		valueTile("humidity", "device.humidity", inactiveLabel: false, width: 2, height: 2) {
 			state "humidity", label: '${currentValue}% humidity', unit: ""
@@ -66,10 +69,11 @@ metadata {
 			state "default", action: "refresh.refresh", icon: "st.secondary.refresh"
 		}
 
-		main "temperature", "humidity"
-		details(["temperature", "humidity", "battery"])
+		main "temp&humidity"
+		details(["temp&humidity", "temperature", "humidity", "battery"])
 	}
 }
+
 
 
 // Parse incoming device messages to generate events
@@ -77,10 +81,25 @@ def parse(String description) {
 	log.debug "parse: desc: $description"
 	def name = parseName(description)
 	def value = parseValue(description)
-	def unit = name == "temperature" ? getTemperatureScale() : (name == "humidity" ? "%" : null)
+	def temperatureUnit = getTemperatureScale()
+    def mergedValue
+    
     if (name == "temperature" && value == "48") {
     	log.debug "wrong temp: " + value
-    } else {
+    } else {    	
+    	if (name == "temperature") {
+        	log.debug "report temp event>> currentTemp: $value, beforeTemp: $state.beforeTemp"
+            log.debug "report temp event>> beforeHumidity: $state.beforeHumidity"
+        	state.beforeTemp = value
+           	mergedValue = "$value°$temperatureUnit / $state.beforeHumidity%"
+        } else {
+        	log.debug "report humidity>> currentHumidity: $value, beforeHumidity: $state.beforeHumidity"
+            log.debug "report humidity>> beforeTemp: $state.beforeTemp"
+        	//name = "temperature"
+        	state.beforeHumidity = value
+            mergedValue = "$state.beforeTemp°$temperatureUnit / $value%"
+        }
+        sendEvent(name:"temp&humidity", value: mergedValue)
 		def result = createEvent(name: name, value: value, unit: unit)
         log.debug "Parse returned ${result?.descriptionText}"
         
