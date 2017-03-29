@@ -82,6 +82,7 @@ def parse(String description) {
 	def name = parseName(description)
 	def value = parseValue(description)
 	def temperatureUnit = getTemperatureScale()
+    def zeroUnit = '-'
     def mergedValue
     
     if (name == "temperature" && value == "48") {
@@ -91,17 +92,18 @@ def parse(String description) {
         	log.debug "report temp event>> currentTemp: $value, beforeTemp: $state.beforeTemp"
             log.debug "report temp event>> beforeHumidity: $state.beforeHumidity"
         	state.beforeTemp = value
-           	mergedValue = "$value°$temperatureUnit / $state.beforeHumidity%"
+
+           	mergedValue = "$value°$temperatureUnit / ${state.beforeHumidity == null ? zeroUnit : state.beforeHumidity}%"
         } else {
         	log.debug "report humidity>> currentHumidity: $value, beforeHumidity: $state.beforeHumidity"
-            log.debug "report humidity>> beforeTemp: $state.beforeTemp"
-        	//name = "temperature"
+            log.debug "report humidity>> beforeTemp: $state.beforeTemp"        	
         	state.beforeHumidity = value
-            mergedValue = "$state.beforeTemp°$temperatureUnit / $value%"
+
+            mergedValue = "${state.beforeTemp == null ? zeroUnit : state.beforeTemp}°$temperatureUnit / $value%"
         }
         sendEvent(name:"temp&humidity", value: mergedValue)
 		def result = createEvent(name: name, value: value, unit: unit)
-        log.debug "Parse returned ${result?.descriptionText}"
+        //log.debug "Parse returned ${result?.descriptionText}"
         
         return result
     }
@@ -132,22 +134,15 @@ private String parseValue(String description) {
 
 def refresh() {
 	log.debug "refresh temperature, humidity, and battery"
-	return zigbee.readAttribute(zigbee.TEMPERATURE_MEASUREMENT_CLUSTER, 0x0000) +
-			zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x0020) +
-			zigbee.configureReporting(0xFC45, 0x0000, DataType.INT16, 30, 3600, 100) +
-			zigbee.batteryConfig() +
-			zigbee.temperatureConfig(30, 300)
+	return zigbee.batteryConfig() +
+			zigbee.temperatureConfig(30, 3600)
 }
 
-def configure() {
-	// Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
-	// enrolls with default periodic reporting until newer 5 min interval is confirmed
-	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-
+def configure() {	
 	log.debug "Configuring Reporting and Bindings."
-
-	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
+	// temperature minReportTime 30 seconds, maxReportTime 60 min. Reporting interval if no activity
 	// battery minReport 30 seconds, maxReportTime 6 hrs by default
+    zigbee.batteryConfig() + zigbee.temperatureConfig(30, 3600)
 	return refresh()
 }
 
