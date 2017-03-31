@@ -62,43 +62,45 @@ def parse(String description) {
 	log.debug "description: $description"
     
 	def event = zigbee.getEvent(description)
-    if (event) {
-    	sendEvent(event)
-    } else {    	
-        if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
-        	// CO detected data is endsWith below value
-            // 6400, 9600, 1E00, FA00, C800, 9600, 5E01, 9001, 2C01
-            if (description?.endsWith("64B0")
-            	|| description?.endsWith("0000")) {
-            	log.info "smoke clear"                
-                sendEvent(name: "smoke", value: "clear")
-            } else {
+    def name = "smoke"
+    def value
+    
+    if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
+        // CO detected data is endsWith below value
+        // 6400, 9600, 1E00, FA00, C800, 9600, 5E01, 9001, 2C01
+        if (description?.endsWith("64B0")) {
+        	// It looks like clear but ignore
+            return
+        } else if (description?.endsWith("0000")) {
+            log.info "smoke clear"                
+            value = "clear"
+        } else {
+            log.info "smoke detected"
+            def lastState = device.currentValue("smoke")
+            value = "detected"                
+        }
+    } else if (description?.startsWith("read attr -")) {			// For Smoke Sensor
+        // Smoke detected data is '0001', clear data is other data '0b04', '0000'
+        def descMap = parseDescriptionAsMap(description)  
+        log.warn "clusterId : " + descMap.cluster
+        log.warn "attributeId : " + descMap.attrId
+        log.warn "data : " + descMap.value
+        if (descMap.cluster == "0B03" && descMap.attrId == "0000") {
+            if (descMap.value == "0001") {
                 log.info "smoke detected"
-                def lastState = device.currentValue("smoke")
-                if (lastState != "detected") {
-                	sendEvent(name: "smoke", value: "detected")
-                }
-            }
-        } else if (description?.startsWith("read attr -")) {			// For Smoke Sensor
-        	// Smoke detected data is '0001', clear data is other data '0b04', '0000'
-            def descMap = parseDescriptionAsMap(description)  
-            log.warn "clusterId : " + descMap.cluster
-            log.warn "attributeId : " + descMap.attrId
-            log.warn "data : " + descMap.value
-            if (descMap.cluster == "0B03" && descMap.attrId == "0000") {
-            	if (descMap.value == "0001") {
-                	log.info "smoke detected"
-                	sendEvent(name: "smoke", value: "detected")
-                } else {
-                	log.info "smoke clear"   
-                    def lastState = device.currentValue("smoke")
-                    if (lastState != "clear") {
-                		sendEvent(name: "smoke", value: "clear")
-                    }
-                }
+                value = "detected" 
+            } else if (descMap.value == "0000") {
+                log.info "smoke clear"   
+                value = "clear"
+            } else {
+            	// It looks like clear but ignore: b064
+            	return
             }
         }
-    }  	
+    }
+    def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName smoke is $value!", displayed: true, isStateChange: true)        
+    return result
+ 
 
 }
  
@@ -118,4 +120,22 @@ def parseDescriptionAsMap(description) {
 		def nameAndValue = param.split(":")
 		map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
 	}
+}
+
+def configure() {
+    log.debug "Configuring Reporting and Bindings."
+    // Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
+    // enrolls with default periodic reporting until newer 5 min interval is confirmed
+    sendEvent(name: "checkInterval", value: 2 * 10 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	
+    // OnOff minReportTime 0 seconds, maxReportTime 5 min. Reporting interval if no activity
+    refresh() + configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01)
+}
+
+def refresh() {
+	log.debug "Refreshing Battery"
+    def endpointId = 0x01
+	[
+	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
+	] //+ enrollResponse()
 }
