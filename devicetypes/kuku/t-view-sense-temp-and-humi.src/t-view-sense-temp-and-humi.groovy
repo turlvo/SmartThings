@@ -101,7 +101,7 @@ def parse(String description) {
 
             mergedValue = "${state.beforeTemp == null ? zeroUnit : state.beforeTemp}°$temperatureUnit / $value%"
         }
-        sendEvent(name:"temp&humidity", value: mergedValue)
+        sendEvent(name:"temp&humidity", value: mergedValue, displayed: false)
 		def result = createEvent(name: name, value: value, unit: unit)
         //log.debug "Parse returned ${result?.descriptionText}"
         
