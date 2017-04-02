@@ -44,6 +44,11 @@ metadata {
                 attributeState("unknown", label:"UNKNOWN", icon:"st.alarm.smoke.test", backgroundColor:"#ffffff")
         	}
         }
+        
+        
+        valueTile("coVal", "device.coVal", width: 2, height: 2) {
+            state "coVal", label:'${currentValue}', defaultState: true
+        }
 
  		standardTile("reset", "device.smoke", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "default", label:'Clear', action:"clear"
@@ -54,7 +59,7 @@ metadata {
 		}  
 
         main "smoke"
-		details(["smoke", "reset", "test"])
+		details(["smoke", "coVal", "reset", "test"])
 	}
 }
 
@@ -64,21 +69,47 @@ def parse(String description) {
 	def event = zigbee.getEvent(description)
     def name = "smoke"
     def value
+    def coValue
     
     if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
         // CO detected data is endsWith below value
-        // 6400, 9600, 1E00, FA00, C800, 9600, 5E01, 9001, 2C01
-        if (description?.endsWith("64B0")) {
-        	// It looks like clear but ignore
-            return
-        } else if (description?.endsWith("0000")) {
+        // 1E00(30), 3200(50), 6400(100), 9600(150), C800(200), FA00(250), 2C01(300), 5E01(350), 9001(400), E803(1000)
+        if (description?.endsWith("64B0")
+        	|| description?.endsWith("0000")) {        	
             log.info "smoke clear"                
             value = "clear"
+            coValue = 0
         } else {
             log.info "smoke detected"
             def lastState = device.currentValue("smoke")
-            value = "detected"                
+            value = "detected"
+            if (description?.endsWith("1E00")) {
+                coValue = 30
+            } else if (description?.endsWith("3200")) {
+                coValue = 50
+            } else if (description?.endsWith("6400")) {
+                coValue = 100
+            } else if (description?.endsWith("9600")) {
+                coValue = 150
+            } else if (description?.endsWith("C800")) {
+                coValue = 200
+            } else if (description?.endsWith("FA00")) {
+                coValue = 250
+            } else if (description?.endsWith("2C01")) {
+                coValue = 300
+            } else if (description?.endsWith("5E01")) {
+                coValue = 350
+            } else if (description?.endsWith("9001")) {
+                coValue = 400
+            } else if (description?.endsWith("F401")) {
+                coValue = 500
+            } else if (description?.endsWith("E803")) {
+                coValue = 1000
+            }
+            sendEvent(name: "coVal", value: coValue);
         }
+        def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName CO is $coValue!")        
+        return result
     } else if (description?.startsWith("read attr -")) {			// For Smoke Sensor
         // Smoke detected data is '0001', clear data is other data '0b04', '0000'
         def descMap = parseDescriptionAsMap(description)  
@@ -86,32 +117,37 @@ def parse(String description) {
         log.warn "attributeId : " + descMap.attrId
         log.warn "data : " + descMap.value
         if (descMap.cluster == "0B03" && descMap.attrId == "0000") {
-            if (descMap.value == "0001") {
-                log.info "smoke detected"
-                value = "detected" 
-            } else if (descMap.value == "0000") {
+            if (descMap.value == "0000") {
                 log.info "smoke clear"   
                 value = "clear"
-            } else {
+            } else if (descMap.value == "b064") {
             	// It looks like clear but ignore: b064
             	return
+            } else {
+                log.info "smoke detected"
+                value = "detected" 
             }
+        } else {
+        	return
         }
+        def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName smoke is $value!")        
+        return result
     }
-    def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName smoke is $value!", displayed: true, isStateChange: true)        
-    return result
+
  
 
 }
  
 def test() {
 	log.debug "test()"
+    sendEvent(name: "coVal", value: 500);
 	sendEvent(name: "smoke", value: "detected", descriptionText: "$device.displayName smoke detected!")
 }
 
 
 def clear() {
 	log.debug "clear()"
+    sendEvent(name: "coVal", value: 0);
 	sendEvent(name: "smoke", value: "clear", descriptionText: "$device.displayName clear")
 }
 
