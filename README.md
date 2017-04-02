@@ -17,9 +17,9 @@ Repository for all related to SmartThings.
   2. Enter 'My Device Handlers' menu
   3. Select 'Settings'
   4. Add Github Repositories and save
-    Owner: turlvo
-    Name: SmartThings
-    Brnach: master
+    - Owner: turlvo
+    - Name: SmartThings
+    - Branch: master
   5. Select 'Update from Repo' and 'SmartThings(master)'
   6. Check Device Handler from 'New' tab
   7. Check 'Publish' and Add
