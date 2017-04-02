@@ -132,19 +132,25 @@ private String parseValue(String description) {
 	null
 }
 
-def refresh() {
-	log.debug "refresh temperature, humidity, and battery"
-	return zigbee.batteryConfig() +
-			zigbee.temperatureConfig(30, 3600)
+def configure() {
+    log.debug "Configuring Reporting and Bindings."
+    // Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
+    // enrolls with default periodic reporting until newer 5 min interval is confirmed
+    sendEvent(name: "checkInterval", value: 2 * 10 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	
+    // OnOff minReportTime 0 seconds, maxReportTime 5 min. Reporting interval if no activity
+    refresh() + configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) + 
+    zigbee.temperatureConfig(30, 3600) + zigbee.temperatureConfig(30, 3600)
 }
 
-def configure() {	
-	log.debug "Configuring Reporting and Bindings."
-	// temperature minReportTime 30 seconds, maxReportTime 60 min. Reporting interval if no activity
-	// battery minReport 30 seconds, maxReportTime 6 hrs by default
-    zigbee.batteryConfig() + zigbee.temperatureConfig(30, 3600)
-	return refresh()
+def refresh() {
+	log.debug "Refreshing Battery"
+    def endpointId = 0x01
+	[
+	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
+	] //+ enrollResponse()
 }
+
 
 private Map getBatteryResult(rawValue) {
 	log.debug 'Battery'
