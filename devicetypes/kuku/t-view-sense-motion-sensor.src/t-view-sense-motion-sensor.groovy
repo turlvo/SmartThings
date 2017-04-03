@@ -29,6 +29,9 @@ metadata {
 		// TODO: define status and reply messages here
 	}
 
+	preferences {
+		input "motionReset", "number", title: "Number of seconds after the last reported activity to report that motion is inactive (in seconds).", description: "", value:15, displayDuringSetup: false
+	}
 // UI tile definitions
 	tiles {
         multiAttributeTile(name:"motion", type: "generic", width: 6, height: 4, canChangeIcon: true){
@@ -62,8 +65,9 @@ def parse(String description) {
     } else if (description?.startsWith("illuminance:")) {    	
 		def eventValue = description?.endsWith(" 257") ? "active" : "inactive"
         sendEvent(name: "motion", value:eventValue)
-        log.debug "Run 10 seconds timer"            
-        runIn(10, handler)
+        if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 15
+        log.debug "Run $settings.motionReset seconds timer"            
+        runIn(settings.motionReset, handler)
     } else {
         log.warn "DID NOT PARSE MESSAGE for description : $description"
         log.debug zigbee.parseDescriptionAsMap(description)
@@ -72,6 +76,7 @@ def parse(String description) {
 }
 
 def handler(time) {
+	log.debug "reset motion"
     sendEvent(name:"motion", value:"inactive")
 }
 
