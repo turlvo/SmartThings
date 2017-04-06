@@ -42,35 +42,63 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		multiAttributeTile(name: "temp&humidity", type: "generic", width: 6, height: 4, canChangeIcon: true) {
-			tileAttribute("temp&humidity", key: "PRIMARY_CONTROL") {
-				attributeState "temp&humidity", label: '${currentValue}',
-						backgroundColors: [
-								[value: 18, color: "#153591"],
-								//[value: 20, color: "#1e9cbb"],
-								//[value: 22, color: "#90d2a7"],
-								[value: 21, color: "#44b621"],
-								[value: 24, color: "#f1d801"],
-								[value: 27, color: "#d04e00"],
-								[value: 30, color: "#bc2323"]
-						]
-			}
-		}
+        multiAttributeTile(name: "temp&humidity", type: "generic", width: 6, height: 4) {
+            tileAttribute("temp&humidity", key: "PRIMARY_CONTROL") {
+                attributeState "temp&humidity", label: '${currentValue}',
+                    backgroundColors:[
+                        [value: 0, color: "#153591"],
+                        [value: 5, color: "#1e9cbb"],
+                        [value: 10, color: "#90d2a7"],
+                        [value: 15, color: "#44b621"],
+                        [value: 20, color: "#f1d801"],
+                        [value: 25, color: "#d04e00"],
+                        [value: 30, color: "#bc2323"],
+                        [value: 44, color: "#1e9cbb"],
+                        [value: 59, color: "#90d2a7"],
+                        [value: 74, color: "#44b621"],
+                        [value: 84, color: "#f1d801"],
+                        [value: 95, color: "#d04e00"],
+                        [value: 96, color: "#bc2323"]                                      
+                    ]
+            }
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
+            }
+        }
 		valueTile("temperature", "device.temperature", inactiveLabel: false, width: 2, height: 2) {
 			state "temperature", label: '${currentValue}°C temperature', unit: ""
 		}
-		valueTile("humidity", "device.humidity", inactiveLabel: false, width: 2, height: 2) {
-			state "humidity", label: '${currentValue}% humidity', unit: ""
+		standardTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+			state "humidity", label:'${currentValue}%', icon:"st.Weather.weather12"
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "battery", label: '${currentValue}% battery'
 		}
 		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "default", action: "refresh.refresh", icon: "st.secondary.refresh"
-		}
+            state "default", action: "refresh.refresh", icon: "st.secondary.refresh"
+        }
 
-		main "temp&humidity"
-		details(["temp&humidity", "temperature", "humidity", "battery"])
+        valueTile("temp&humidity2", "temp&humidity", decoration: "flat", inactiveLabel: false) {
+            state "default", label:'${currentValue}', icon: "st.Weather.weather2",
+                backgroundColors:[
+                    [value: 0, color: "#153591"],
+                    [value: 5, color: "#1e9cbb"],
+                    [value: 10, color: "#90d2a7"],
+                    [value: 15, color: "#44b621"],
+                    [value: 20, color: "#f1d801"],
+                    [value: 25, color: "#d04e00"],
+                    [value: 30, color: "#bc2323"],
+                    [value: 44, color: "#1e9cbb"],
+                    [value: 59, color: "#90d2a7"],
+                    [value: 74, color: "#44b621"],
+                    [value: 84, color: "#f1d801"],
+                    [value: 95, color: "#d04e00"],
+                    [value: 96, color: "#bc2323"]                                      
+                ]
+        }
+
+        main "temp&humidity2"
+        details(["temp&humidity", "temperature", "humidity", "battery"])
 	}
 }
 
@@ -82,10 +110,10 @@ def parse(String description) {
 	def name = parseName(description)
 	def value = parseValue(description)
 	def temperatureUnit = getTemperatureScale()
-    def zeroUnit = '-'
+    def zeroUnit = '--'
     def mergedValue
     
-    if (name == "temperature" && value == "48") {
+    if (name == "temperature" && (value == "47.9" || value == "48.1")) {
     	log.debug "wrong temp: " + value
     } else {    	
     	if (name == "temperature") {
@@ -93,17 +121,22 @@ def parse(String description) {
             log.debug "report temp event>> beforeHumidity: $state.beforeHumidity"
         	state.beforeTemp = value
 
-           	mergedValue = "$value°$temperatureUnit / ${state.beforeHumidity == null ? zeroUnit : state.beforeHumidity}%"
-        } else {
+           	mergedValue = "${value == null ? zeroUnit : value}°$temperatureUnit / ${state.beforeHumidity == null ? zeroUnit : state.beforeHumidity}%"
+            sendEvent(name:"temp&humidity", value: mergedValue, displayed: false)
+        } else if (name == "humidity") {
         	log.debug "report humidity>> currentHumidity: $value, beforeHumidity: $state.beforeHumidity"
             log.debug "report humidity>> beforeTemp: $state.beforeTemp"        	
         	state.beforeHumidity = value
 
-            mergedValue = "${state.beforeTemp == null ? zeroUnit : state.beforeTemp}°$temperatureUnit / $value%"
+            mergedValue = "${state.beforeTemp == null ? zeroUnit : state.beforeTemp}°$temperatureUnit / ${value == null ? zeroUnit : value}%"
+            sendEvent(name:"temp&humidity", value: mergedValue, displayed: false)
         }
-        sendEvent(name:"temp&humidity", value: mergedValue, displayed: false)
+        
 		def result = createEvent(name: name, value: value, unit: unit)
         //log.debug "Parse returned ${result?.descriptionText}"
+    	
+        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+		sendEvent(name: "lastCheckin", value: now, displayed: false)
         
         return result
     }
@@ -116,71 +149,150 @@ private String parseName(String description) {
 		return "temperature"
 	} else if (description?.startsWith("humidity: ")) {
 		return "humidity"
+	} else if (description?.startsWith("read attr -")) {
+		return "battery"
 	}
 	null
 }
 
+
+
 private String parseValue(String description) {
+
 	if (description?.startsWith("temperature: ")) {
-		return zigbee.parseHATemperatureValue(description, "temperature: ", getTemperatureScale())
+		def value = ((description - "temperature: ").trim()) as Float 
+        
+        if (getTemperatureScale() == "C") {
+        	if (tempOffset) {
+				return (Math.round(value * 10))/ 10 + tempOffset as Float
+            } else {
+				return (Math.round(value * 10))/ 10 as Float
+			}            	
+		} else {
+        	if (tempOffset) {
+				return (Math.round(value * 90/5))/10 + 32 + offset as Float
+            } else {
+				return (Math.round(value * 90/5))/10 + 32 as Float
+			}            	
+		}        
+        
 	} else if (description?.startsWith("humidity: ")) {
 		def pct = (description - "humidity: " - "%").trim()
+        
 		if (pct.isNumber()) {
 			return Math.round(new BigDecimal(pct)).toString()
 		}
-	}
+	} else if (description?.startsWith("catchall: ")) {
+		return parseCatchAllMessage(description)
+	} else {
+    log.debug "unknown: $description"
+    sendEvent(name: "unknown", value: description)
+    }
 	null
 }
+private Map parseCatchAllMessage(String description) {
+	Map resultMap = [:]
+	def cluster = zigbee.parse(description)
+	log.debug cluster
+	if (shouldProcessMessage(cluster)) {
+		switch(cluster.clusterId) {
+			case 0x0000:
+			resultMap = getBatteryResult(cluster.data.last())
+			break
 
-def configure() {
-    log.debug "Configuring Reporting and Bindings."
-    // Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
-    // enrolls with default periodic reporting until newer 5 min interval is confirmed
-    sendEvent(name: "checkInterval", value: 2 * 10 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+			case 0xFC02:
+			log.debug 'ACCELERATION'
+			break
+
+			case 0x0402:
+			log.debug 'TEMP'
+				// temp is last 2 data values. reverse to swap endian
+				String temp = cluster.data[-2..-1].reverse().collect { cluster.hex1(it) }.join()
+				def value = getTemperature(temp)
+				resultMap = getTemperatureResult(value)
+				break
+		}
+	}
+
+	return resultMap
+}
+private Map parseReportAttributeMessage(String description) {
+	Map descMap = (description - "read attr - ").split(",").inject([:]) { map, param ->
+		def nameAndValue = param.split(":")
+		map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
+	}
+	log.debug "Desc Map: $descMap"
+   
+	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
+    //log.debug "parseReportAttributeMessage ${descMap.raw[-2:-1]}"
+		return getBatteryResult(Integer.parseInt(descMap.value, 16))        
+	}
+
+}
+
+private String getBatteryResult(rawValue) {
+	log.debug 'Battery'
+	def linkText = getLinkText(device)
+	log.debug rawValue
+
+	def result =  '--'
+    def maxBatt = 100
+    def battLevel = Math.round(rawValue * 100 / 255)
 	
-    // OnOff minReportTime 0 seconds, maxReportTime 5 min. Reporting interval if no activity
-    refresh() + configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) + 
-    zigbee.temperatureConfig(30, 3600) + zigbee.temperatureConfig(30, 3600)
+	if (battLevel > maxBatt) {
+				battLevel = maxBatt
+    }
+
+	return battLevel
 }
 
 def refresh() {
-	log.debug "Refreshing Battery"
-    def endpointId = 0x01
-	[
-	    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0000 0x0000", "delay 200"
-	] //+ enrollResponse()
+	log.debug "refresh called"
+	def refreshCmds = [
+		"st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
+		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
+	]
+
+	return refreshCmds// + enrollResponse()
 }
 
+def configure() {
+	// Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
+	// enrolls with default periodic reporting until newer 5 min interval is confirmed
+	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 
-private Map getBatteryResult(rawValue) {
-	log.debug 'Battery'
-	def linkText = getLinkText(device)
+	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
+	// battery minReport 30 seconds, maxReportTime 6 hrs by default
+	return refresh() + zigbee.batteryConfig() + zigbee.temperatureConfig(30, 900) // send refresh cmds as part of config
+}
 
-	log.debug rawValue
-
-	def result = [
-		name: 'battery',
-		value: '--'
+def enrollResponse() {
+	log.debug "Sending enroll response"
+	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
+	[
+		//Resending the CIE in case the enroll request is sent before CIE is written
+		"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
+		"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 2000",
+		//Enroll Response
+		"raw 0x500 {01 23 00 00 00}", "delay 200",
+		"send 0x${device.deviceNetworkId} 1 1", "delay 2000"
 	]
-    result.descriptionText = "${linkText} battery was ${rawValue}%"
+}
 
-	def volts = rawValue / 10
-    log.debug volts
-	def descriptionText
+private String swapEndianHex(String hex) {
+	reverseArray(hex.decodeHex()).encodeHex()
+}
 
-	if (rawValue == 0) {}
-	else {
-		if (volts > 3.5) {
-			result.descriptionText = "${linkText} battery has too much power (${volts} volts)."
-		}
-		else if (volts > 0){
-			def minVolts = 2.1
-			def maxVolts = 3.0
-			def pct = (volts - minVolts) / (maxVolts - minVolts)
-			result.value = Math.min(100, (int) pct * 100)
-			result.descriptionText = "${linkText} battery was ${result.value}%"
-		}
+private byte[] reverseArray(byte[] array) {
+	int i = 0;
+	int j = array.length - 1;
+	byte tmp;
+	while (j > i) {
+		tmp = array[j];
+		array[j] = array[i];
+		array[i] = tmp;
+		j--;
+		i++;
 	}
-
-	return result
+	return array
 }
