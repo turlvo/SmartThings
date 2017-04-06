@@ -43,6 +43,9 @@ metadata {
                 attributeState("replacement required", label:"REPLACE", icon:"st.alarm.smoke.test", backgroundColor:"#FFFF66")
                 attributeState("unknown", label:"UNKNOWN", icon:"st.alarm.smoke.test", backgroundColor:"#ffffff")
         	}
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
+            }
         }
         
         
@@ -131,6 +134,10 @@ def parse(String description) {
         	return
         }
         def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName smoke is $value!")        
+
+        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+        sendEvent(name: "lastCheckin", value: now, displayed: false)
+        
         return result
     }
 

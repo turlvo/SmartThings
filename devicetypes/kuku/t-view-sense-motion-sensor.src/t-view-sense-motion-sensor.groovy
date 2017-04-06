@@ -39,6 +39,9 @@ metadata {
 				attributeState "active", label:'motion', icon:"st.motion.motion.active", backgroundColor:"#53a7c0"
 				attributeState "inactive", label:'no motion', icon:"st.motion.motion.inactive", backgroundColor:"#ffffff"
 			}
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
+            }
 		}        
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
@@ -65,6 +68,10 @@ def parse(String description) {
     } else if (description?.startsWith("illuminance:")) {    	
 		def eventValue = description?.endsWith(" 257") ? "active" : "inactive"
         sendEvent(name: "motion", value:eventValue)
+        
+        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+		sendEvent(name: "lastCheckin", value: now, displayed: false)
+        
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 15
         log.debug "Run $settings.motionReset seconds timer"            
         runIn(settings.motionReset, handler)

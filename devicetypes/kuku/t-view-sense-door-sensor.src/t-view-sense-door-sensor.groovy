@@ -30,6 +30,9 @@ metadata {
 				attributeState "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor:"#ffa81e"
 				attributeState "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor:"#79b821"
 			}
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+                attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
+            }
 		} 
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
@@ -48,7 +51,9 @@ def parse(String description) {
     log.debug "value: " + value
     
     if (value > 1) {
-    	sendEvent(name:"battery", value:value)	
+    	sendEvent(name:"battery", value:value)
+        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+        sendEvent(name: "lastCheckin", value: now, displayed: false)
     } else {
         def event = zigbee.getEvent(description)
         if (event) {
@@ -61,6 +66,8 @@ def parse(String description) {
                     changedValue = "closed"
                 }
                 sendEvent(name:"contact", value:changedValue)
+                def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+                sendEvent(name: "lastCheckin", value: now, displayed: false)
             } else {
                 sendEvent(event)
             }
