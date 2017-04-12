@@ -71,6 +71,9 @@ def parse(String description) {
     def event = zigbee.getEvent(description)
     log.warn event
     
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)
+
     if (event) {
     	if (event.name == "power") {
             def powerValue
@@ -106,10 +109,6 @@ def parse(String description) {
             log.debug "Switch command"
             name = "switch"
             value = description?.endsWith(" 1") ? "on" : "off"
-
-            def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-            sendEvent(name: "lastCheckin", value: now, displayed: false)
-
         }
 
         def result = createEvent(name: name, value: value)

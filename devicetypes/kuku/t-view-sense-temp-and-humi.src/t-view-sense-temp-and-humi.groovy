@@ -112,8 +112,11 @@ def parse(String description) {
 	def temperatureUnit = getTemperatureScale()
     def zeroUnit = '--'
     def mergedValue
+
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)
     
-    if (name == "temperature" && (value == "47.9" || value == "48.1")) {
+    if (name == "temperature" && (value == "47.9" || value == "48.0" || value == "48.1")) {
     	log.debug "wrong temp: " + value
     } else {    	
     	if (name == "temperature") {
@@ -135,8 +138,7 @@ def parse(String description) {
 		def result = createEvent(name: name, value: value, unit: unit)
         //log.debug "Parse returned ${result?.descriptionText}"
     	
-        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-		sendEvent(name: "lastCheckin", value: now, displayed: false)
+
         
         return result
     }

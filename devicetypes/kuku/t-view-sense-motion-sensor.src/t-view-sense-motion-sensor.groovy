@@ -62,15 +62,15 @@ def parse(String description) {
     
     def event = zigbee.getEvent(description)
     log.warn event
-    
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)
     if (event) {
         sendEvent(event)
     } else if (description?.startsWith("illuminance:")) {    	
 		def eventValue = description?.endsWith(" 257") ? "active" : "inactive"
         sendEvent(name: "motion", value:eventValue)
         
-        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-		sendEvent(name: "lastCheckin", value: now, displayed: false)
+
         
         if (settings.motionReset == null || settings.motionReset == "" ) settings.motionReset = 15
         log.debug "Run $settings.motionReset seconds timer"            

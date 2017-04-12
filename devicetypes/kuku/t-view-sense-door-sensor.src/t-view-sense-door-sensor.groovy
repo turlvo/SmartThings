@@ -49,11 +49,11 @@ def parse(String description) {
 	
     def value = (description - "on/off: ") as Integer
     log.debug "value: " + value
-    
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)   
     if (value > 1) {
     	sendEvent(name:"battery", value:value)
-        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-        sendEvent(name: "lastCheckin", value: now, displayed: false)
+
     } else {
         def event = zigbee.getEvent(description)
         if (event) {
@@ -66,8 +66,7 @@ def parse(String description) {
                     changedValue = "closed"
                 }
                 sendEvent(name:"contact", value:changedValue)
-                def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-                sendEvent(name: "lastCheckin", value: now, displayed: false)
+
             } else {
                 sendEvent(event)
             }

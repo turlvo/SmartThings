@@ -34,9 +34,9 @@ metadata {
                 attributeState "turningOn", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#79b821", nextState:"turningOff"
                 attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
             }
-//            tileAttribute ("power", key: "SECONDARY_CONTROL") {
-//                attributeState "power", label:'${currentValue} kW'
-//            }
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+    			attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+            }
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
@@ -50,7 +50,9 @@ metadata {
 def parse(String description) {
     log.debug "description is $description"
  	def name = null
-	def value = null   
+	def value = null  
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)
     if (description?.startsWith("read attr -")) {
         def descMap = parseDescriptionAsMap(description)  
         log.warn "clusterId : " + descMap.cluster

@@ -73,7 +73,8 @@ def parse(String description) {
     def name = "smoke"
     def value
     def coValue
-    
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)  
     if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
         // CO detected data is endsWith below value
         // 1E00(30), 3200(50), 6400(100), 9600(150), C800(200), FA00(250), 2C01(300), 5E01(350), 9001(400), E803(1000)
@@ -111,7 +112,8 @@ def parse(String description) {
             }
             sendEvent(name: "coVal", value: coValue);
         }
-        def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName CO is $coValue!")        
+        def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName CO is $coValue!") 
+
         return result
     } else if (description?.startsWith("read attr -")) {			// For Smoke Sensor
         // Smoke detected data is '0001', clear data is other data '0b04', '0000'
@@ -133,10 +135,6 @@ def parse(String description) {
         } else {
         	return
         }
-        def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName smoke is $value!")        
-
-        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-        sendEvent(name: "lastCheckin", value: now, displayed: false)
         
         return result
     }
