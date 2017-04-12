@@ -81,6 +81,9 @@ metadata {
 def parse(String description) {
     def result = []
     def cmd = zwave.parse(description,[0x20: 1, 0x26: 1])
+
+    def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
+    sendEvent(name: "lastCheckin", value: now)
     if (cmd) {
         result = zwaveEvent(cmd)
         log.debug("'$description' parsed to ${result[0]}")
@@ -138,8 +141,6 @@ def done() {
         } else {
             sendEvent(name: "switch", value: "closed")
         }
-        def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
-        sendEvent(name: "lastCheckin", value: now, displayed: false)
     }
 }
 
