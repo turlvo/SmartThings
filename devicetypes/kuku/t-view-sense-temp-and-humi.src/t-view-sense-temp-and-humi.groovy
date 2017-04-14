@@ -65,8 +65,8 @@ metadata {
                 attributeState("default", label:'Last Update: ${currentValue}', icon: "st.Health & Wellness.health9")
             }
         }
-		valueTile("temperature", "device.temperature", inactiveLabel: false, width: 2, height: 2) {
-			state "temperature", label: '${currentValue}°C temperature', unit: ""
+		standardTile("temperature", "device.temperature", inactiveLabel: false, width: 2, height: 2) {
+			state "temperature", label: '${currentValue}°C', icon:"st.Weather.weather2"
 		}
 		standardTile("humidity", "device.humidity", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "humidity", label:'${currentValue}%', icon:"st.Weather.weather12"
@@ -96,9 +96,12 @@ metadata {
                     [value: 96, color: "#bc2323"]                                      
                 ]
         }
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
+        }
 
         main "temp&humidity2"
-        details(["temp&humidity", "temperature", "humidity", "battery"])
+        details(["temp&humidity", "temperature", "humidity", "battery", "refresh"])
 	}
 }
 
@@ -255,7 +258,7 @@ def refresh() {
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
 	]
 
-	return refreshCmds// + enrollResponse()
+	return refreshCmds + enrollResponse()
 }
 
 def configure() {
