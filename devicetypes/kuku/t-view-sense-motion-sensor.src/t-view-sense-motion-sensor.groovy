@@ -44,13 +44,13 @@ metadata {
             }
 		}        
         
-        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
 			state "battery", label:'${currentValue}% battery'
 		}
 
 
 		main (["motion"])
-		details(["motion"])
+		details(["motion", "battery"])
 	}
 }
 
@@ -64,6 +64,16 @@ def parse(String description) {
     log.warn event
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
+  
+  	// To check whether sensor is alive
+    def batteryVal = device.currentValue("battery")
+    log.debug "battery: $batteryVal"
+    if (batteryVal == 0 || batteryVal == null) {
+    	log.debug "reset battery"
+        sendEvent(name:"battery", value:100)
+    }
+	runIn(900, batterWarning)
+    
     if (event) {
         sendEvent(event)
     } else if (description?.startsWith("illuminance:")) {    	
@@ -80,6 +90,12 @@ def parse(String description) {
         log.debug zigbee.parseDescriptionAsMap(description)
     }
 
+}
+
+def batterWarning() {
+	// if this routine is executed, it means that there is no report during 900 seconds
+    log.debug "batterWarning()"
+	sendEvent(name:"battery", value:0)
 }
 
 def handler(time) {

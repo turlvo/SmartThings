@@ -119,7 +119,16 @@ def parse(String description) {
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
     
-    if (name == "temperature" && (value == "47.9" || value == "48.0" || value == "48.1")) {
+	// To check whether sensor is alive
+    def batteryVal = device.currentValue("battery")
+    if (batteryVal == 0 || batteryVal == null) {
+    	log.debug "reset battery"
+        sendEvent(name:"battery", value:100)
+    }
+	runIn(900, batterWarning)
+    
+    if (name == "temperature" && (Float.parseFloat(value) >= 47)) {
+    	// Todo. ex) 47.9, 48, 48.1, 48.2
     	log.debug "wrong temp: " + value
     } else {    	
     	if (name == "temperature") {
@@ -140,13 +149,15 @@ def parse(String description) {
         
 		def result = createEvent(name: name, value: value, unit: unit)
         //log.debug "Parse returned ${result?.descriptionText}"
-    	
-
-        
+           
         return result
-    }
-	
-	
+    }	
+}
+
+def batterWarning() {
+	// if this routine is executed, it means that there is no report during 900 seconds
+    log.debug "batterWarning()"
+	sendEvent(name:"battery", value:0)
 }
 
 private String parseName(String description) {

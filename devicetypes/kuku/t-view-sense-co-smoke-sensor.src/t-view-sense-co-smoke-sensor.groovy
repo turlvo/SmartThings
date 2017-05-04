@@ -57,12 +57,16 @@ metadata {
 			state "default", label:'Clear', action:"clear"
 		}
         
+        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
+			state "battery", label:'${currentValue}% battery'
+		}
+        
  		standardTile("test", "device.smoke", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "default", label:'Test', action:"test"
 		}  
 
         main "smoke"
-		details(["smoke", "coVal", "reset", "test"])
+		details(["smoke", "coVal", "battery", "reset", "test"])
 	}
 }
 
@@ -75,6 +79,15 @@ def parse(String description) {
     def coValue
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)  
+
+	// To check whether sensor is alive
+    def batteryVal = device.currentValue("battery")
+    if (batteryVal == 0 || batteryVal == null) {
+    	log.debug "reset battery"
+        sendEvent(name:"battery", value:100)
+    }
+	runIn(900, batterWarning)
+
     if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
         // CO detected data is endsWith below value
         // 1E00(30), 3200(50), 6400(100), 9600(150), C800(200), FA00(250), 2C01(300), 5E01(350), 9001(400), E803(1000)
@@ -142,7 +155,13 @@ def parse(String description) {
  
 
 }
- 
+
+def batterWarning() {
+	// if this routine is executed, it means that there is no report during 900 seconds
+    log.debug "batterWarning()"
+	sendEvent(name:"battery", value:0)
+}
+
 def test() {
 	log.debug "test()"
     sendEvent(name: "coVal", value: 500);
