@@ -17,8 +17,6 @@ metadata {
         capability "Actuator"
         capability "Configuration"
         capability "Refresh"
-        capability "Switch"
-        capability "Switch Level"
         capability "Health Check"        
        
         fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0003, 0006", manufacturer: "LGI", deviceJoinName: "T View Sense Door Sensor Device "

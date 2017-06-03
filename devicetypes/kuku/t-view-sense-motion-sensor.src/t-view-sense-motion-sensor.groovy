@@ -19,6 +19,7 @@ metadata {
 		capability "Configuration"		
 		capability "Sensor"
         capability "Motion Sensor"
+        capability "Refresh"
         capability "illuminanceMeasurement"
         
         fingerprint endpointId: "1", profileId: "0104", inClusters: "0000, 0003, 0400, 0406", manufacturer: "LGI"

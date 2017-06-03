@@ -17,8 +17,6 @@ metadata {
         capability "Actuator"
         capability "Configuration"
         capability "Refresh"
-        capability "Power Meter"
-        capability "Sensor"
         capability "Switch"
 
         fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0005, 0006, 0B04"

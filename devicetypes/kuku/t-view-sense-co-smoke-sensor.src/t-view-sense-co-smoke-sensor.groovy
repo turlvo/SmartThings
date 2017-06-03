@@ -86,20 +86,27 @@ def parse(String description) {
     	log.debug "reset battery"
         sendEvent(name:"battery", value:100)
     }
-	runIn(900, batterWarning)
-
+	runIn(1200, batterWarning)
+	Map descMap = zigbee.parseDescriptionAsMap(description)
     if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
+        log.warn "clusterId : " + descMap.cluster
+        log.warn "attributeId : " + descMap.attrId
+        log.warn "data : " +  Integer.parseInt(descMap.value, 16)
+        
         // CO detected data is endsWith below value
         // 1E00(30), 3200(50), 6400(100), 9600(150), C800(200), FA00(250), 2C01(300), 5E01(350), 9001(400), E803(1000)
-        if (description?.endsWith("64B0")
-        	|| description?.endsWith("0000")) {        	
-            log.info "smoke clear"                
+        if (descMap.value == "b064"
+        	|| descMap.value == "0000") {        	
+            log.info "CO clear"                
             value = "clear"
             coValue = 0
+            sendEvent(name: "coVal", value: coValue);
         } else {
-            log.info "smoke detected"
+            log.info "CO detected"
             def lastState = device.currentValue("smoke")
             value = "detected"
+            coVal = Integer.parseInt(descMap.value, 16)
+            /*
             if (description?.endsWith("1E00")) {
                 coValue = 30
             } else if (description?.endsWith("3200")) {
@@ -122,15 +129,14 @@ def parse(String description) {
                 coValue = 500
             } else if (description?.endsWith("E803")) {
                 coValue = 1000
-            }
+            }*/
             sendEvent(name: "coVal", value: coValue);
         }
         def result = createEvent(name: "smoke", value: value, descriptionText: "$device.displayName CO is $coValue!") 
 
         return result
     } else if (description?.startsWith("read attr -")) {			// For Smoke Sensor
-        // Smoke detected data is '0001', clear data is other data '0b04', '0000'
-        def descMap = parseDescriptionAsMap(description)  
+        // Smoke detected data is '0001', clear data is other data '0b04', '0000'        
         log.warn "clusterId : " + descMap.cluster
         log.warn "attributeId : " + descMap.attrId
         log.warn "data : " + descMap.value

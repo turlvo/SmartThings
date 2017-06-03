@@ -18,7 +18,6 @@ metadata {
         capability "Configuration"
         capability "Refresh"
         capability "Power Meter"
-        capability "Sensor"
         capability "Switch"
         capability "Health Check"
         
@@ -74,6 +73,7 @@ def parse(String description) {
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
 
+    
     if (event) {
     	if (event.name == "power") {
             def powerValue
@@ -83,8 +83,7 @@ def parse(String description) {
         else {
             sendEvent(event)
         }
-    } else {
-    
+    } else {    
         if (description?.startsWith("read attr -")) {
             def descMap = parseDescriptionAsMap(description)  
             log.warn "clusterId : " + descMap.cluster
@@ -96,6 +95,7 @@ def parse(String description) {
                 value = String.format("%5.3f",zigbee.convertHexToInt(descMap.value) / 1000)
                 energy = value
                 log.warn "energy : " + value
+                powerRefresh()
             } else if (descMap.cluster == "0702" && descMap.attrId == "0200") {
                 if (value == "80") {
                     log.warn "***********"
@@ -138,7 +138,7 @@ def powerConfig() {
 	[
 			//Meter (Power) Reporting
 			"zdo bind 0x${device.deviceNetworkId} 1 ${endpointId} 0x0702 {${device.zigbeeId}} {}", "delay 200",
-			"zcl global send-me-a-report 0x0702 0x0400 0x2A 1 60 {05}",
+			"zcl global send-me-a-report 0x0702 0x0400 0x2A 0 1 {01}",
 			"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 1500",
             
             //Meter (Power) Reporting			
@@ -151,34 +151,34 @@ def powerConfig() {
 
 
 def powerRefresh() {
-    [
-    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0702 0x0000", "delay 500",
-    "st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0702 0x0400", "delay 500",
-	]
-    log.debug "refresh()"
+    log.debug "powerRefresh()"
+    zigbee.readAttribute(0x0702, 0x0400)
     //igbee.readAttribute(0x0702, 0x0000) + zigbee.readAttribute(0x0702, 0x0400)
 }
 
 def off() {
     zigbee.off()
+    //runIn(30, powerRefresh)
 }
 
 def on() {
     zigbee.on()
+    //runIn(30, powerRefresh)
 }
 
 def refresh() {
     //zigbee.onOffRefresh() + powerRefresh() + onOffConfig() + powerConfig()
     log.info "refresh()"
-    	[
-			"st rattr 0x${device.deviceNetworkId} ${endpointId} 6 0", "delay 500",			
-			"st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0702 0x0400", "delay 500"
-]
+    //[
+	//		"st rattr 0x${device.deviceNetworkId} ${endpointId} 6 0", "delay 500",			
+	//		"st rattr 0x${device.deviceNetworkId} ${endpointId} 0x0702 0x0400", "delay 500"
+	//]
+    zigbee.onOffRefresh() + zigbee.readAttribute(0x0702, 0x0400) + configure() 
 }
 
 def configure() {
     log.debug "in configure()"
-    zigbee.onOffConfig() + powerConfig()
+    zigbee.onOffConfig() + zigbee.configureReporting(0x0702, 0x0400, 0x2A, 0, 60, 0x0001)
 }
 
 def parseDescriptionAsMap(description) {
