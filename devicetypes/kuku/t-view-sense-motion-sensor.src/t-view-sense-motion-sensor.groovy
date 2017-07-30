@@ -67,13 +67,13 @@ def parse(String description) {
     sendEvent(name: "lastCheckin", value: now)
   
   	// To check whether sensor is alive
-    def batteryVal = device.currentValue("battery")
-    log.debug "battery: $batteryVal"
-    if (batteryVal == 0 || batteryVal == null) {
-    	log.debug "reset battery"
-        sendEvent(name:"battery", value:100)
-    }
-	runIn(900, batterWarning)
+    //def batteryVal = device.currentValue("battery")
+    //log.debug "battery: $batteryVal"
+    //if (batteryVal == 0 || batteryVal == null) {
+    //	log.debug "reset battery"
+    //    sendEvent(name:"battery", value:100)
+    //}
+	//runIn(900, batterWarning)
     
     if (event) {
         sendEvent(event)

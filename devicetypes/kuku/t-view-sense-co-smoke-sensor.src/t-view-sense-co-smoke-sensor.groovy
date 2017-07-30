@@ -81,12 +81,12 @@ def parse(String description) {
     sendEvent(name: "lastCheckin", value: now)  
 
 	// To check whether sensor is alive
-    def batteryVal = device.currentValue("battery")
-    if (batteryVal == 0 || batteryVal == null) {
-    	log.debug "reset battery"
-        sendEvent(name:"battery", value:100)
-    }
-	runIn(1200, batterWarning)
+    //def batteryVal = device.currentValue("battery")
+    //if (batteryVal == 0 || batteryVal == null) {
+    //	log.debug "reset battery"
+    //    sendEvent(name:"battery", value:100)
+    //}
+	//runIn(1200, batterWarning)
 	Map descMap = zigbee.parseDescriptionAsMap(description)
     if (description?.startsWith('catchall: 0104 0500')) {			// For CO Sensor
         log.warn "clusterId : " + descMap.cluster

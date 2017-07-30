@@ -120,12 +120,12 @@ def parse(String description) {
     sendEvent(name: "lastCheckin", value: now)
     
 	// To check whether sensor is alive
-    def batteryVal = device.currentValue("battery")
-    if (batteryVal == 0 || batteryVal == null) {
-    	log.debug "reset battery"
-        sendEvent(name:"battery", value:100)
-    }
-	runIn(900, batterWarning)
+    //def batteryVal = device.currentValue("battery")
+    //if (batteryVal == 0 || batteryVal == null) {
+    //	log.debug "reset battery"
+    //    sendEvent(name:"battery", value:100)
+    //}
+	//runIn(900, batterWarning)
     
     if (name == "temperature" && (Float.parseFloat(value) >= 47)) {
     	// Todo. ex) 47.9, 48, 48.1, 48.2
