@@ -31,7 +31,7 @@ metadata {
         input name: "param1", type: "enum", title: "Set external switch mode:", description: "Switch type", required: true, options:["Disabled","Momentary NO","Momentary NC","Toggle NO","Toggle NC"]
        	input name: "param2", type: "enum", title: "Auto shutoff minutes:", description: "Minutes?", required: false, options:["Never","1","5","30","60","90","120","240"]
         input name: "isGD", type: "bool",title: "Enable Momentary on (for garage door controller)", required: false
-        input name: "isGDDelay", type: "num",title: "Enable Momentary on dealy time(default 5 seconds)", required: false
+        input name: "isGDDelay", type: "number",title: "Enable Momentary on dealy time(default 5 seconds)", required: false
     }
 
 	// simulator metadata
@@ -134,7 +134,7 @@ def unlock() {
 	if (settings.isGD) {
     	//log.info "isGD: true"
         if (settings.isGDDelay == null || settings.isGDDelay == "" ) settings.isGDDelay = 5
-    	delayBetween([zwave.basicV1.basicSet(value: 0xFF).format(),zwave.basicV1.basicSet(value: 0x00).format(),zwave.switchBinaryV1.switchBinaryGet().format()], (Integer.parseInt(settings.isGDDelay) * 1000))	
+    	delayBetween([zwave.basicV1.basicSet(value: 0xFF).format(),zwave.basicV1.basicSet(value: 0x00).format(),zwave.switchBinaryV1.switchBinaryGet().format()], settings.isGDDelay * 1000)	
     } else {
     	//log.info "isGD: false"
 		delayBetween([zwave.basicV1.basicSet(value: 0xFF).format(),zwave.switchBinaryV1.switchBinaryGet().format()])
