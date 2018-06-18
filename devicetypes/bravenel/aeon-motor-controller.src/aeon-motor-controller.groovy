@@ -19,12 +19,12 @@ metadata {
         capability "Actuator"
         capability "Switch"
         capability "Switch Level"
-        capability "Window Shade"
-        capability "Health Check"
+        capability "Window Shade"        
 
         command "up"
         command "down"
         command "stop"
+        command "levelOpenClose"
 
         fingerprint deviceId: "0x1107", inClusters: "0x25 0x26 0x70 0x85 0x72 0x86 0xEF 0x82"
     }
@@ -41,11 +41,11 @@ metadata {
     
     preferences {
         input title: "Operation Time", description: "The After execute up/down blind", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-        input "operationTime", "number", title: "Time(Seconds)", description: "", range: "*..*", displayDuringSetup: false
-	}
+        input "operationTime", "number", title: "Time(Seconds)", defaultValue: 30, description: "", range: "*..*", displayDuringSetup: false
+   }
     
     tiles {
-        multiAttributeTile(name:"switch", type: "device.switch", width: 3, height: 2, canChangeIcon: true){
+        multiAttributeTile(name:"switch", type: "generic", width: 3, height: 2, canChangeIcon: true){
             tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
                 attributeState "default", label:'STOPPED', icon:"st.Transportation.transportation13", backgroundColor:"#79b821"
                 attributeState "open", label:'open', action:"switch.off", icon:"st.doors.garage.garage-opening", backgroundColor:"#53a7c0"
@@ -72,6 +72,10 @@ metadata {
         standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state ("default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh")
         }
+        
+        valueTile("ShadeLevel", "device.level", width: 2, height: 1) {
+           state "level", label: 'Shade is ${currentValue}% up'
+        }
 
         main(["switch"])
         details([ "switch", "on","off","stop","refresh",])
@@ -88,8 +92,8 @@ def parse(String description) {
         result = zwaveEvent(cmd)
         log.debug("'$description' parsed to ${result[0]}")
         if (result[0].value == "closing" || result[0].value == "opening") {
-        	log.debug "it's up/down event"
-            runIn(30, done)
+           log.debug "it's up/down event"
+            runIn(operationTime, done)
         }
     } else {
         log.debug("Couldn't zwave.parse '$description'")
@@ -99,14 +103,14 @@ def parse(String description) {
 
 
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv1.SwitchMultilevelReport cmd) {
-	log.debug " zwaveEvent: cmd: $cmd"
+   log.debug " zwaveEvent: cmd: $cmd"
     def result = []
     if (state.stp==false){
         if(cmd.value == 0) {
-            result << createEvent(name: "switch", value: "closing")
+            result << createEvent(name: "switch", value: "opening")
         }
         else if(cmd.value == 255 || cmd.value == 99) {
-            result << createEvent(name: "switch", value: "opening")
+            result << createEvent(name: "switch", value: "closing")
         }
     }
     else {
@@ -123,7 +127,7 @@ def refresh() {
 }
 
 def stop() {
-	log.debug ("stop")
+   log.debug ("stop")
     state.stp=true
     delayBetween([
         zwave.switchMultilevelV1.switchMultilevelStopLevelChange().format(),
@@ -133,19 +137,32 @@ def stop() {
 }
 
 def done() {
-	log.debug ("done")
+   log.debug ("done")
     if (state.stp==false){
         zwave.switchMultilevelV1.switchMultilevelStopLevelChange().format()
-        if (state.up == true) {
-            sendEvent(name: "switch", value: "open")        
+        if (state.up == false) {
+            sendEvent(name: "switch", value: "open")
+         sendEvent(name: "level", value: 100, unit: "%")
         } else {
             sendEvent(name: "switch", value: "closed")
+            sendEvent(name: "level", value: 0, unit: "%")
         }
     }
 }
 
 def on() {
-log.debug ("on")
+   log.debug ("on")
+    state.up = false
+    state.stp=false
+    delayBetween([
+        zwave.switchMultilevelV1.switchMultilevelSet(value: 0x00).format(),
+        zwave.switchMultilevelV1.switchMultilevelGet().format()
+    ], 2000)
+   
+}
+
+def off() {
+   log.debug ("off")
     state.up = true
     state.stp=false
     delayBetween([
@@ -154,12 +171,20 @@ log.debug ("on")
     ], 2000)
 }
 
-def off() {
-log.debug ("off")
-    state.up = false
-    state.stp=false
-    delayBetween([
-        zwave.switchMultilevelV1.switchMultilevelSet(value: 0x00).format(),
-        zwave.switchMultilevelV1.switchMultilevelGet().format()
-    ], 2000)
+def levelOpenClose(value) {
+    log.debug("levelOpenClose called with value ${value}.")
+    if (value) {
+        on()
+    } else {
+        off()
+    }
+}
+
+def setLevel(value) {
+   log.debug("setLevel called with value ${value}")
+    if (value) {
+        on()
+    } else {
+        off()
+    }
 }
